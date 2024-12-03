@@ -84,13 +84,23 @@ function createCircle() {
             noteGroup.forEach(n => {
                 const span = document.createElement('span');
                 span.textContent = n;
-                span.onclick = () => checkAnswer(n);
+                // Make the entire span clickable
+                span.style.cursor = 'pointer';
+                span.onclick = (e) => {
+                    e.stopPropagation();
+                    checkAnswer(n);
+                };
                 noteDiv.appendChild(span);
             });
             noteElement.appendChild(noteDiv);
         } else {
             noteElement.textContent = noteGroup[0];
-            noteElement.onclick = () => checkAnswer(noteGroup[0]);
+            noteElement.onclick = (e) => {
+                e.stopPropagation();
+                if (noteGroup.length === 1) {
+                    checkAnswer(noteGroup[0]);
+                }
+            };
         }
         
         container.appendChild(noteElement);
@@ -107,6 +117,7 @@ function startTest() {
         `Find the major third of ${currentNote}`;
     document.getElementById('feedback').textContent = '';
     document.getElementById('explanation').textContent = '';
+    document.getElementById('explanation').style.display = 'none';
     document.getElementById('nextButton').style.display = 'none';
     startTime = new Date();
 }
@@ -163,16 +174,19 @@ function checkAnswer(selectedNote) {
             feedbackElement.textContent += ` (also written as ${enharmonic})`;
         }
         
-        explanationElement.textContent = `
-            How to find the major third of ${currentNote}:
-            1. Start at ${currentNote}
-            2. Count four semitones up
-            3. Land on ${correctAnswer}${enharmonic ? ` (also written as ${enharmonic})` : ''}
-            
+        explanationElement.innerHTML = `
+            How to find the major third of ${currentNote}:<br>
+            1. Start at ${currentNote}<br>
+            2. Count four semitones up<br>
+            3. Land on ${correctAnswer}${enharmonic ? ` (also written as ${enharmonic})` : ''}<br>
+            <br>
             Remember: A major third is always four semitones above the root note.`;
+            
+        document.getElementById('explanation').style.display = 'block';
     }
     
     updateScore();
+    updateQuestionLog(selectedNote, isCorrect, timeElapsed);
     isWaiting = true;
     document.getElementById('nextButton').style.display = 'block';
 }
@@ -192,6 +206,27 @@ function resetNotes() {
 function updateScore() {
     document.getElementById('score').textContent = 
         `Score: ${score}/${totalQuestions} (${Math.round(score/totalQuestions*100)}%)`;
+}
+
+function updateQuestionLog(selectedNote, isCorrect, timeElapsed) {
+    const logContainer = document.getElementById('logEntries');
+    const logEntry = document.createElement('div');
+    logEntry.className = `p-2 border rounded ${isCorrect ? 'bg-success-subtle' : 'bg-danger-subtle'}`;
+    
+    logEntry.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Q${totalQuestions}:</span>
+            <span>Find third of ${currentNote} → ${selectedNote}</span>
+            <span>${isCorrect ? '✓' : '✗'}</span>
+            <span>${timeElapsed.toFixed(1)}s</span>
+        </div>
+        <div class="small text-muted">
+            Correct answer: ${noteRelations[currentNote]}
+        </div>
+    `;
+    
+    // Insert at the beginning for newest first
+    logContainer.insertBefore(logEntry, logContainer.firstChild);
 }
 
 window.onload = createCircle;

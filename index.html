@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Piano Major Thirds Trainer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .circle-container {
+            width: 500px;
+            height: 500px;
+            position: relative;
+            margin: 20px auto;
+            border-radius: 50%;
+            border: 2px solid #333;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .note {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .note:hover {
+            background: #f0f0f0;
+            transform: scale(1.1);
+        }
+        
+        .note.active {
+            background: #90EE90;
+            transform: scale(1.1);
+        }
+        
+        .note.wrong {
+            background: #FFB6C1;
+            transform: scale(1.1);
+        }
+        
+        #controls {
+            text-align: center;
+            margin: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #nextButton {
+            background-color: #2196F3;
+        }
+        
+        #nextButton:hover {
+            background-color: #1976D2;
+        }
+        
+        #question {
+            font-size: 24px;
+            margin: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        #feedback {
+            font-size: 20px;
+            margin: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        #explanation {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+            line-height: 1.6;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        #score {
+            font-size: 18px;
+            margin: 15px;
+            color: #333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button onclick="startTest()">Test Major Thirds</button>
+        <div id="question"></div>
+        <div id="feedback"></div>
+        <div id="score"></div>
+    </div>
+    <div class="circle-container" id="circle"></div>
+    <button id="nextButton" onclick="nextQuestion()" style="display: none;">Next Question</button>
+    <div id="explanation"></div>
+
+    <script>
+        const noteRelations = {
+            // Major thirds with sharps
+            'C': 'E',
+            'G': 'B',
+            'D': 'F♯',
+            'A': 'C♯',
+            'E': 'G♯',
+            'B': 'D♯',
+            'F♯': 'A♯',
+            'C♯': 'F',
+            'G♯': 'C',
+            'D♯': 'G',
+            'A♯': 'D',
+            'F': 'A',
+            
+            // Major thirds with flats
+            'F♭': 'A♭',
+            'C♭': 'E♭',
+            'G♭': 'B♭',
+            'D♭': 'F',
+            'A♭': 'C',
+            'E♭': 'G',
+            'B♭': 'D'
+        };
+
+        const enharmonicPairs = {
+            'F♯': 'G♭',
+            'G♭': 'F♯',
+            'C♯': 'D♭',
+            'D♭': 'C♯',
+            'G♯': 'A♭',
+            'A♭': 'G♯',
+            'D♯': 'E♭',
+            'E♭': 'D♯',
+            'A♯': 'B♭',
+            'B♭': 'A♯'
+        };
+
+        let currentNote = null;
+        let score = 0;
+        let totalQuestions = 0;
+        let isWaiting = false;
+
+        function createCircle() {
+            const container = document.getElementById('circle');
+            const circleNotes = [
+                'C', 'G', 'D', 'A', 'E', 'B', 'F♯/G♭', 
+                'C♯/D♭', 'G♯/A♭', 'D♯/E♭', 'A♯/B♭', 'F'
+            ];
+            
+            circleNotes.forEach((note, index) => {
+                const angle = (index * 30 - 90) * (Math.PI / 180);
+                const x = 230 + 200 * Math.cos(angle);
+                const y = 230 + 200 * Math.sin(angle);
+                
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note';
+                noteElement.textContent = note;
+                noteElement.style.left = `${x}px`;
+                noteElement.style.top = `${y}px`;
+                noteElement.onclick = () => checkAnswer(note);
+                container.appendChild(noteElement);
+            });
+        }
+
+        function startTest() {
+            if (isWaiting) return;
+            resetNotes();
+            const notes = Object.keys(noteRelations);
+            currentNote = notes[Math.floor(Math.random() * notes.length)];
+            
+            document.getElementById('question').textContent = 
+                `Find the major third of ${currentNote}`;
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('explanation').textContent = '';
+            document.getElementById('nextButton').style.display = 'none';
+        }
+
+        function checkAnswer(selectedNote) {
+            if (!currentNote || isWaiting) return;
+            
+            totalQuestions++;
+            const correctAnswer = noteRelations[currentNote];
+            const isCorrect = selectedNote === correctAnswer || 
+                           (enharmonicPairs[selectedNote] === correctAnswer) ||
+                           (enharmonicPairs[correctAnswer] === selectedNote);
+            
+            const noteElements = document.getElementsByClassName('note');
+            const feedbackElement = document.getElementById('feedback');
+            const explanationElement = document.getElementById('explanation');
+            
+            Array.from(noteElements).find(el => 
+                el.textContent.includes(correctAnswer))
+                .classList.add('active');
+            
+            if (isCorrect) {
+                score++;
+                feedbackElement.style.color = 'green';
+                feedbackElement.textContent = 'Correct! ✓';
+                if (enharmonicPairs[selectedNote]) {
+                    feedbackElement.textContent += 
+                        ` (${selectedNote} = ${enharmonicPairs[selectedNote]})`;
+                }
+                explanationElement.textContent = '';
+            } else {
+                Array.from(noteElements).find(el => 
+                    el.textContent.includes(selectedNote))
+                    .classList.add('wrong');
+                feedbackElement.style.color = 'red';
+                feedbackElement.textContent = 
+                    `Wrong! The correct answer is ${correctAnswer}`;
+                if (enharmonicPairs[correctAnswer]) {
+                    feedbackElement.textContent += 
+                        ` (also written as ${enharmonicPairs[correctAnswer]})`;
+                }
+                
+                explanationElement.textContent = `
+                    How to find the major third of ${currentNote}:
+                    1. Start at ${currentNote}
+                    2. Count four semitones up
+                    3. Land on ${correctAnswer} ${enharmonicPairs[correctAnswer] ? 
+                       `(also written as ${enharmonicPairs[correctAnswer]})` : ''}
+                    
+                    Remember: A major third is always four semitones above the root note.`;
+            }
+            
+            updateScore();
+            isWaiting = true;
+            document.getElementById('nextButton').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            isWaiting = false;
+            startTest();
+        }
+
+        function resetNotes() {
+            const notes = document.getElementsByClassName('note');
+            Array.from(notes).forEach(note => {
+                note.classList.remove('active', 'wrong');
+            });
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = 
+                `Score: ${score}/${totalQuestions} (${Math.round(score/totalQuestions*100)}%)`;
+        }
+
+        window.onload = createCircle;
+    </script>
+</body>
+</html>

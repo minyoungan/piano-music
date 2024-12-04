@@ -117,9 +117,9 @@ function startTest() {
     if (isWaiting) return;
     resetNotes();
 
-    // Initialize ordered notes array if empty
+    // Initialize and shuffle ordered notes array if empty
     if (orderedNotes.length === 0) {
-        orderedNotes = Object.keys(noteRelations);
+        orderedNotes = shuffleArray([...Object.keys(noteRelations)]);
         currentIndex = 0;
         isOrderedMode = true;
     }
@@ -133,7 +133,7 @@ function startTest() {
         if (currentIndex >= orderedNotes.length) {
             isOrderedMode = false;
             document.getElementById('feedback').textContent = 
-                'Completed ordered testing! Switching to random mode.';
+                'Completed testing all notes! Switching to random mode.';
         }
     } else {
         // Random mode
@@ -254,6 +254,15 @@ function updateQuestionLog(selectedNote, isCorrect, timeElapsed) {
     
     // Insert at the beginning for newest first
     logContainer.insertBefore(logEntry, logContainer.firstChild);
+}
+
+// Add this shuffle function at the top with other utility functions
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
 
 window.onload = createCircle;

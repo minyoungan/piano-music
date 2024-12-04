@@ -1,3 +1,8 @@
+// Add these variables at the top with other declarations
+let orderedNotes = [];
+let currentIndex = 0;
+let isOrderedMode = true;
+
 const noteRelations = {
     // Sharps
     'C': 'E',
@@ -107,15 +112,37 @@ function createCircle() {
     });
 }
 
+// Modify the startTest function
 function startTest() {
     if (isWaiting) return;
     resetNotes();
-    const notes = Object.keys(noteRelations);
-    currentNote = notes[Math.floor(Math.random() * notes.length)];
+
+    // Initialize ordered notes array if empty
+    if (orderedNotes.length === 0) {
+        orderedNotes = Object.keys(noteRelations);
+        currentIndex = 0;
+        isOrderedMode = true;
+    }
+
+    // Choose next note based on mode
+    if (isOrderedMode) {
+        currentNote = orderedNotes[currentIndex];
+        currentIndex++;
+        
+        // Switch to random mode after testing all notes
+        if (currentIndex >= orderedNotes.length) {
+            isOrderedMode = false;
+            document.getElementById('feedback').textContent = 
+                'Completed ordered testing! Switching to random mode.';
+        }
+    } else {
+        // Random mode
+        const notes = Object.keys(noteRelations);
+        currentNote = notes[Math.floor(Math.random() * notes.length)];
+    }
     
     document.getElementById('question').textContent = 
         `Find the major third of ${currentNote}`;
-    document.getElementById('feedback').textContent = '';
     document.getElementById('explanation').textContent = '';
     document.getElementById('explanation').style.display = 'none';
     document.getElementById('nextButton').style.display = 'none';
